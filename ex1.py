@@ -75,14 +75,6 @@ def review_to_words(review):
     # for tag, count in zip(vocab, dist):
     #     print count, tag
 
-def get_reviews_data(file_name):
-    """Get reviews data, from local csv."""
-    if os.path.exists(file_name):
-        print("-- " + file_name + " found locally")
-        df = pd.read_csv(file_name, header=0, delimiter="\t", quoting=3, error_bad_lines=False)
-        # df = list(open("data/f2.csv").readlines())
-    return df
-
 def cleaning_data(dataset, file_name):
 
     # Get the number of reviews based on the dataframe column size
@@ -110,14 +102,6 @@ def cleaning_data(dataset, file_name):
         for review in clean_train_reviews:
             f.write("%s\n" % review)
 
-def vectorizer():
-    vector = CountVectorizer(analyzer="word",
-                             tokenizer=None,
-                             preprocessor=None,
-                             stop_words=None,
-                             max_features=1000)
-    return vector
-
 def fit(query):
     # try:
     #     clf = joblib.load('svm.pkl')
@@ -142,7 +126,7 @@ def fit(query):
                     id1 = item['id']
                     message = item['message']
                     message = ViTokenizer.tokenize(message).encode('utf8')
-                    # message = clean_str_vn(message)
+                    message = clean_str_vn(message)
                     message = review_to_words(message)
                     i.append(message)
                     try:
@@ -186,28 +170,32 @@ def fit(query):
             print "First review:", train["message"][0], "|", train["id"][0]
 
             clean_train_reviews = train
-            clean_train_reviews["sentiment"] = clean_train_reviews["id"] == 1
+            # clean_train_reviews["sentiment"] = clean_train_reviews["id"] == 1
             print clean_train_reviews
 
             train, test = train_test_split(clean_train_reviews, test_size=0.2)
 
             print "Creating the bag of words...\n"
-            vectorizer = vector = CountVectorizer(analyzer="word",
-                             tokenizer=None,
-                             preprocessor=None,
-                             stop_words=None,
-                             max_features=1000)
+            # vectorizer = vector = CountVectorizer(analyzer="word",
+            #                  tokenizer=None,
+            #                  preprocessor=None,
+            #                  stop_words=None,
+            #                  max_features=1000)
+
+            vectorizer = TfidfVectorizer(ngram_range=(1, 1), max_df=0.7, min_df=2, max_features=1000)
 
             train_text = train["message"].values.astype('str')
             test_text = test["message"].values.astype('str')
 
             X_train = vectorizer.fit_transform(train_text)
             X_train = X_train.toarray()
-            y_train = train["sentiment"]
+            y_train = train["id"]
+            # y_train = train["sentiment"]
 
             X_test = vectorizer.fit_transform(test_text)
             X_test = X_test.toarray()
-            y_test = test["sentiment"]
+            y_test = test["id"]
+            # y_test = test["sentiment"]
 
 
             """
@@ -219,27 +207,26 @@ def fit(query):
             print "---------------------------"
             names = ["RBF SVC"]
 
-            # iterate over classifiers
-            results = {}
-            kq = {}
             clf.fit(X_train, y_train)
-            print "BBBBB "
-            joblib.dump(clf, 'svm.pkl')
-            print "aaaaa "
+            # joblib.dump(clf, 'svm.pkl')
             y_pred = clf.predict(X_test)
             print y_pred
+            print "predict: %0.3f" % clf.score(X_test,y_test)
+            print "accuracy: %0.3f" % clf.score(X_test, y_test)
             print 'query ', query
-            test_message = ViTokenizer.tokenize(u"tư vấn cho em với").encode('utf8')
-            # test_message = ViTokenizer.tokenize(query).encode('utf8')
+            query = unicode(query, encoding='utf-8')
+            test_message = ViTokenizer.tokenize(query).encode('utf8')
             print "test_message", test_message
+            test_message = clean_str_vn(test_message)
             test_message = review_to_words(test_message)
-            print test_message
             clean_test_reviews = []
             clean_test_reviews.append(test_message)
             d2 = {"message": clean_test_reviews}
             test2 = pd.DataFrame(d2)
             print test2
             test_text2 = test2["message"].values.astype('str')
+            print test_text2
+            test_text2 = test2["message"].values
             print test_text2
             test_data_features = vectorizer.transform(test_text2)
             print test_data_features
@@ -248,30 +235,35 @@ def fit(query):
 
             s = clf.predict(test_data_features)
             print s
+            s2 = np.array(s)
+            s3 = str(s2[0])
+            return s3
 
-            return s
 
-def predict_ex(clf, query):
-    test_message = ViTokenizer.tokenize(query).encode('utf8')
-    test_message = review_to_words(test_message)
-    clean_test_reviews = []
-    clean_test_reviews.append(test_message)
-    d2 = {"message": clean_test_reviews}
-    test2 = pd.DataFrame(d2)
-    test_text2 = test2["message"].values.astype('str')
-    test_data_features = vectorizer.transform(test_text2)
-    test_data_features = test_data_features.toarray()
 
-    s = clf.predict(test_data_features)
-    print "ssssss ", s
-    print "1 ",type(s)
-    s2 = np.array(s)
-    print "2 ",type(s2)
-    s3 = ''.join(s2)
-    print "3 ",type(s3)
-
-    # print s3
-    return s3
+# def predict_ex(clf, query):
+#     test_message = ViTokenizer.tokenize(query).encode('utf8')
+#     test_message = review_to_words(test_message)
+#     clean_test_reviews = []
+#     clean_test_reviews.append(test_message)
+#     d2 = {"message": clean_test_reviews}
+#     test2 = pd.DataFrame(d2)
+#     test_text2 = test2["message"].values.astype('str')
+#     test_data_features = vectorizer.transform(test_text2)
+#     test_data_features = test_data_features.toarray()
+#
+#     s = clf.predict(test_data_features)
+#     print "ssssss ", s
+#     # print "1 ",type(s)
+#     s2 = np.array(s)
+#     print "aaaaaaaaa", s2[0]
+#     s3 = str(s2[0])
+#     print "2 ",type(s3)
+#     # s3 = ''.join(s2)
+#     # print "3 ",type(s3)
+#
+#     # print s3
+#     return s3
 
 # X1=["message"]; y1=["id"]
 # # print ViPosTagger.postagging(ViTokenizer.tokenize(u"Trường đại học Bách Khoa Hà Nội"))

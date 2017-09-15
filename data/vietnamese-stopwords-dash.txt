@@ -513,10 +513,8 @@ gặp
 gặp_khó_khăn
 gặp_phải
 gồm
-hay
 hay_biết
 hay_hay
-hay_không
 hay_là
 hay_làm
 hay_nhỉ
@@ -592,7 +590,6 @@ không_cùng
 không_cần
 không_cứ
 không_dùng
-không_gì
 không_hay
 không_khỏi
 không_kể
@@ -733,7 +730,6 @@ mang_lại
 mang_mang
 mang_nặng
 mang_về
-muốn
 mà
 mà_cả
 mà_không
@@ -1624,12 +1620,8 @@ xa_tanh
 xa_tắp
 xa_xa
 xa_xả
-xem
 xem_lại
 xem_ra
-xem_số
-xin
-xin_gặp
 xin_vâng
 xiết_bao
 xon_xón

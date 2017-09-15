@@ -26,7 +26,7 @@ def homepage():
 
             kq = ex1.fit(data2)
             print 'kq ',kq
-            return 'kq'
+            return kq
             # return data2
             # print svm
             # return "svm"
