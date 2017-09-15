@@ -102,142 +102,184 @@ def cleaning_data(dataset, file_name):
         for review in clean_train_reviews:
             f.write("%s\n" % review)
 
-def fit(query):
-    # try:
-    #     clf = joblib.load('svm.pkl')
-    #     print 'load model completed !!!'
-    #     return clf
-    # except:
-    clf = None
-    if clf == None:
-        clf = SVC(kernel='rbf',C=100)
+def load_model(model):
+    print('loading model ...')
+    if os.path.isfile(model):
+        return joblib.load(model)
+    else:
+        return None
 
-        with open('data/labels_quick_response_p2.json') as data_file:
-            data = json.load(data_file)
-            count = 0
-            mlist = []
-            i = []
-            clean_train_reviews = []
-            col1 = [];
-            col2 = []
+def vector():
+    try:
+        clf = joblib.load('model/clf.pkl')
+        print 'load model completed !!!'
+        return clf
+    except:
+        clf = None
+        if clf == None:
+            clf = SVC(kernel='rbf',C=100)
 
-            for item in data:
-                try:
-                    id1 = item['id']
-                    message = item['message']
-                    message = ViTokenizer.tokenize(message).encode('utf8')
-                    message = clean_str_vn(message)
-                    message = review_to_words(message)
-                    i.append(message)
+            with open('data/labels_quick_response_p2.json') as data_file:
+                data = json.load(data_file)
+                count = 0
+                mlist = []
+                i = []
+                clean_train_reviews = []
+                col1 = [];
+                col2 = []
+
+                for item in data:
                     try:
-                        # c = (((item.get("labels")[0]).get("5923dd8056837c2c7f06eef0"))[0]).get("id")
-                        c = item['labels'][0]
-                        for d in c.values():
-                            e = d[0]['id']
-                        i.append(e)
+                        id1 = item['id']
+                        message = item['message']
+                        message = ViTokenizer.tokenize(message).encode('utf8')
+                        message = clean_str_vn(message)
+                        message = review_to_words(message)
+                        i.append(message)
+                        try:
+                            # c = (((item.get("labels")[0]).get("5923dd8056837c2c7f06eef0"))[0]).get("id")
+                            c = item['labels'][0]
+                            for d in c.values():
+                                e = d[0]['id']
+                            i.append(e)
 
-                        j = np.array(i)
-                        if (j.shape != (2,)):
-                            print j
-                        else:
-                            mlist.append(i)
-                            col1.append(message)
-                            col2.append(e)
+                            j = np.array(i)
+                            if (j.shape != (2,)):
+                                print j
+                            else:
+                                mlist.append(i)
+                                col1.append(message)
+                                col2.append(e)
+                        except:
+                            count += 1
+                            pass
+                        i = []
                     except:
+                        print('Sample exception: %s' % (id1))
                         count += 1
-                        pass
-                    i = []
-                except:
-                    print('Sample exception: %s' % (id1))
-                    count += 1
-            dictionary = dict(zip(col1, col2))
+                dictionary = dict(zip(col1, col2))
 
-            list2 = np.array(mlist) # chuyen mlist thanh array
-            print "Data dimensions:", list2.shape
-            # print list2
-            b = 0
-            for v in list2:
-                v1 = np.array(v)
-                if (v1.shape != (2,)):
-                    b += 1
-                    print v1
+                list2 = np.array(mlist) # chuyen mlist thanh array
+                print "Data dimensions:", list2.shape
+                # print list2
+                b = 0
+                for v in list2:
+                    v1 = np.array(v)
+                    if (v1.shape != (2,)):
+                        b += 1
+                        print v1
 
-            d = {"message": col1, "id": col2}
+                d = {"message": col1, "id": col2}
 
-            train = pd.DataFrame(d)
-            print "Data dimensions:", train.shape
-            print "List features:", train.columns.values
-            print "First review:", train["message"][0], "|", train["id"][0]
+                train = pd.DataFrame(d)
+                print "Data dimensions:", train.shape
+                print "List features:", train.columns.values
+                print "First review:", train["message"][0], "|", train["id"][0]
 
-            clean_train_reviews = train
-            # clean_train_reviews["sentiment"] = clean_train_reviews["id"] == 1
-            print clean_train_reviews
+                clean_train_reviews = train
+                # clean_train_reviews["sentiment"] = clean_train_reviews["id"] == 1
+                print clean_train_reviews
 
-            train, test = train_test_split(clean_train_reviews, test_size=0.2)
+                train, test = train_test_split(clean_train_reviews, test_size=0.2)
 
-            print "Creating the bag of words...\n"
-            # vectorizer = vector = CountVectorizer(analyzer="word",
-            #                  tokenizer=None,
-            #                  preprocessor=None,
-            #                  stop_words=None,
-            #                  max_features=1000)
+                print "Creating the bag of words...\n"
+                # vectorizer = vector = CountVectorizer(analyzer="word",
+                #                  tokenizer=None,
+                #                  preprocessor=None,
+                #                  stop_words=None,
+                #                  max_features=1000)
 
-            vectorizer = TfidfVectorizer(ngram_range=(1, 1), max_df=0.7, min_df=2, max_features=1000)
+                vectorizer = TfidfVectorizer(ngram_range=(1, 1), max_df=0.7, min_df=2, max_features=1000)
+                print "AAAA "
 
-            train_text = train["message"].values.astype('str')
-            test_text = test["message"].values.astype('str')
+                train_text = train["message"].values.astype('str')
+                test_text = test["message"].values.astype('str')
 
-            X_train = vectorizer.fit_transform(train_text)
-            X_train = X_train.toarray()
-            y_train = train["id"]
-            # y_train = train["sentiment"]
+                X_train = vectorizer.fit_transform(train_text)
+                X_train = X_train.toarray()
+                y_train = train["id"]
+                print "BBBB "
+                # y_train = train["sentiment"]
 
-            X_test = vectorizer.fit_transform(test_text)
-            X_test = X_test.toarray()
-            y_test = test["id"]
-            # y_test = test["sentiment"]
+                X_test = vectorizer.fit_transform(test_text)
+                X_test = X_test.toarray()
+                y_test = test["id"]
+                # y_test = test["sentiment"]
+                print "EEEEEEE "
+                joblib.dump(vectorizer, 'model/vectorizer.pkl')
+                print "FFFFFF"
+                # joblib.dump(X_train, 'model/X_train.pkl')
+                # joblib.dump(X_test, 'model/X_test.pkl')
+
+                print "---------------------------"
+                print "Training"
+                print "---------------------------"
+                names = ["RBF SVC"]
+
+                clf.fit(X_train, y_train)
+                y_pred = clf.predict(X_test)
+                print y_pred
+                print "accuracy: %0.3f" % clf.score(X_test, y_test)
+                joblib.dump(clf, 'model/clf.pkl')
+                return y_test
 
 
-            """
-            Training
-            """
+def training():
+    clf = load_model('model/vectorizer.pkl')
+    if clf != None:
+        return
+    X = load_model('model/X_train.pkl')
+    y = []
 
-            print "---------------------------"
-            print "Training"
-            print "---------------------------"
-            names = ["RBF SVC"]
 
-            clf.fit(X_train, y_train)
-            # joblib.dump(clf, 'svm.pkl')
-            y_pred = clf.predict(X_test)
-            print y_pred
-            print "predict: %0.3f" % clf.score(X_test,y_test)
-            print "accuracy: %0.3f" % clf.score(X_test, y_test)
-            print 'query ', query
-            query = unicode(query, encoding='utf-8')
-            test_message = ViTokenizer.tokenize(query).encode('utf8')
-            print "test_message", test_message
-            test_message = clean_str_vn(test_message)
-            test_message = review_to_words(test_message)
-            clean_test_reviews = []
-            clean_test_reviews.append(test_message)
-            d2 = {"message": clean_test_reviews}
-            test2 = pd.DataFrame(d2)
-            print test2
-            test_text2 = test2["message"].values.astype('str')
-            print test_text2
-            test_text2 = test2["message"].values
-            print test_text2
-            test_data_features = vectorizer.transform(test_text2)
-            print test_data_features
-            test_data_features = test_data_features.toarray()
-            print test_data_features
 
-            s = clf.predict(test_data_features)
-            print s
-            s2 = np.array(s)
-            s3 = str(s2[0])
-            return s3
+def fit(mes):
+    try:
+        vectorizer = load_model('model/vectorizer.pkl')
+    except:
+        vectorizer = TfidfVectorizer(ngram_range=(1, 1), max_df=0.7, min_df=2, max_features=1000)
+
+    # y_test = vector()
+    clf = load_model('model/clf.pkl')
+    # X_test = load_model('model/X_test.pkl')
+
+
+                # print "---------------------------"
+                # print "Training"
+                # print "---------------------------"
+                # names = ["RBF SVC"]
+                #
+                # clf.fit(X_train, y_train)
+                # joblib.dump(clf, 'svm.pkl')
+    # y_pred = clf.predict(X_test)
+    # print y_pred
+    # print "predict: %0.3f" % clf.score(X_test,y_test)
+    # print "accuracy: %0.3f" % clf.score(X_test, y_test)
+    print 'query ', mes
+    query = unicode(mes, encoding='utf-8')
+    test_message = ViTokenizer.tokenize(query).encode('utf8')
+    print "test_message", test_message
+    test_message = clean_str_vn(test_message)
+    test_message = review_to_words(test_message)
+    clean_test_reviews = []
+    clean_test_reviews.append(test_message)
+    d2 = {"message": clean_test_reviews}
+    test2 = pd.DataFrame(d2)
+    print test2
+    test_text2 = test2["message"].values.astype('str')
+    print test_text2
+    test_text2 = test2["message"].values
+    print test_text2
+    test_data_features = vectorizer.transform(test_text2)
+    print test_data_features
+    test_data_features = test_data_features.toarray()
+    print test_data_features
+
+    s = clf.predict(test_data_features)
+    print s
+    s2 = np.array(s)
+    s3 = str(s2[0])
+    return s3
 
 
 
