@@ -24,14 +24,15 @@ def homepage():
             data2 = request.get_data()
             print data2
 
-            kq = ex1.fit(data2)
+            kq = ex1.predict_ex(data2)
             print 'kq ',kq
             return kq
             # return data2
             # print svm
             # return "svm"
     except:
-        return render_template("home.html", error = error)
+        return 'err'
+        # return render_template('home.html', error = error)
 	return data
 #
 # @app.route('/user/<username>')
